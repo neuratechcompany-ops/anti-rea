@@ -1,0 +1,11 @@
+title = "Anti-REA Gitleaks configuration"
+
+[allowlist]
+description = "Exact synthetic detector fixtures; never production credentials"
+regexes = [
+  '''sk-live-9f8e7d6c5b4a39281706secret''',
+  '''tok_8f3d2a1b9c7e6secret''',
+  '''Sup3rSecret!Prod#2026''',
+  '''bomless-utf16-secret''',
+  '''chacha20-poly1305'''
+]

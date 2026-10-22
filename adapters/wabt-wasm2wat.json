@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "id": "wabt-wasm2wat",
+  "family": "wabt",
+  "type": "probe",
+  "surfaces": ["wasm"],
+  "executableEnv": "WASM2WAT",
+  "args": ["{artifact}"],
+  "timeoutMs": 120000,
+  "maxOutputBytes": 67108864,
+  "outputFormat": "text",
+  "requireNonEmpty": true
+}

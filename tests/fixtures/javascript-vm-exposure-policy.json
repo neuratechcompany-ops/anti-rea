@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 2,
+  "facts": [
+    {
+      "id": "ALG-01",
+      "description": "Non-authoritative client demonstration of the risk calculation",
+      "classification": "COST_ONLY",
+      "impact": "commercial",
+      "tiers": ["T0", "T1", "T2"],
+      "authoritativeLocation": "server",
+      "clientImplementation": true,
+      "serverAuthoritative": true,
+      "canaries": [
+        "premium-discount-algorithm-v4",
+        "manual-review",
+        "decision"
+      ],
+      "recoverySignals": [
+        { "id": "discount-rule", "kind": "identifier", "normalizedSha256": "8ed41817bde56ffcd42018c67859e91e6d9c7a24a16cbd7789b30aae22b1fca8" }
+      ]
+    },
+    {
+      "id": "AUTH-01",
+      "description": "Final entitlement and financial decision",
+      "classification": "SERVER_REQUIRED",
+      "impact": "financial",
+      "tiers": ["T0", "T1", "T2", "T3"],
+      "authoritativeLocation": "server",
+      "clientImplementation": false,
+      "serverAuthoritative": true,
+      "canaries": ["anti-rea-server-financial-authority"],
+      "recoverySignals": []
+    }
+  ]
+}

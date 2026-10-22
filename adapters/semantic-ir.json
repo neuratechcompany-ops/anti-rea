@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "id": "semantic-ir",
+  "family": "semantic-ir",
+  "type": "probe",
+  "surfaces": ["javascript", "wasm", "native", "dotnet-nativeaot", "android-jni"],
+  "executableEnv": "ANTI_REA_SEMANTIC_IR_EXTRACTOR",
+  "args": ["{artifact}"],
+  "timeoutMs": 120000,
+  "maxOutputBytes": 16777216,
+  "outputFormat": "json",
+  "requireNonEmpty": true
+}

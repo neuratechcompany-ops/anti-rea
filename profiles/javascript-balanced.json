@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "id": "javascript-balanced",
+  "transformer": "javascript-obfuscator",
+  "surfaces": ["browser", "electron-renderer", "node-bundle"],
+  "compatibleNextStages": ["node-bytecode"],
+  "limits": {
+    "maxInputBytes": 5242880,
+    "maxSizeRatio": 4,
+    "maxFixedOverheadBytes": 65536
+  },
+  "options": {
+    "compact": true,
+    "controlFlowFlattening": true,
+    "controlFlowFlatteningThreshold": 0.35,
+    "deadCodeInjection": false,
+    "identifierNamesGenerator": "hexadecimal",
+    "numbersToExpressions": true,
+    "renameGlobals": true,
+    "selfDefending": false,
+    "simplify": true,
+    "splitStrings": true,
+    "splitStringsChunkLength": 8,
+    "stringArray": true,
+    "stringArrayCallsTransform": true,
+    "stringArrayCallsTransformThreshold": 0.75,
+    "stringArrayEncoding": ["base64"],
+    "stringArrayThreshold": 1,
+    "stringArrayWrappersCount": 1,
+    "stringArrayWrappersChainedCalls": true,
+    "transformObjectKeys": true
+  }
+}

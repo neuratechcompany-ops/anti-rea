@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "bundleId": "example-production-roots-1",
+  "product": "ExampleProduct",
+  "environment": "production",
+  "issuedAt": "2030-01-01T00:00:00.000Z",
+  "expiresAt": "2030-06-01T00:00:00.000Z",
+  "roles": {
+    "artifact-publisher": ["../keys/artifact-publisher-public.pem"],
+    "assessment-gate": ["../keys/assessment-gate-public.pem"],
+    "evidence-coordinator": ["../keys/evidence-coordinator-public.pem"],
+    "evidence-worker": ["../keys/evidence-worker-public.pem"],
+    "product-builder": ["../keys/product-builder-public.pem"],
+    "protection-policy": ["../keys/product-owner-policy-public.pem"],
+    "release-attestation": ["../keys/release-attestation-public.pem"],
+    "release-manifest": ["../keys/release-manifest-public.pem"],
+    "server-authorization": ["../keys/server-authorization-public.pem"],
+    "time-authority": ["../keys/time-authority-public.pem"]
+  }
+}

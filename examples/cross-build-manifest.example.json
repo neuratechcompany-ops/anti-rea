@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "variants": [
+    { "path": "build-01/protected-region.bin", "attestation": "build-01/variant.attestation.json" },
+    { "path": "build-02/protected-region.bin", "attestation": "build-02/variant.attestation.json" },
+    { "path": "build-03/protected-region.bin", "attestation": "build-03/variant.attestation.json" },
+    { "path": "build-04/protected-region.bin", "attestation": "build-04/variant.attestation.json" },
+    { "path": "build-05/protected-region.bin", "attestation": "build-05/variant.attestation.json" },
+    { "path": "build-06/protected-region.bin", "attestation": "build-06/variant.attestation.json" },
+    { "path": "build-07/protected-region.bin", "attestation": "build-07/variant.attestation.json" },
+    { "path": "build-08/protected-region.bin", "attestation": "build-08/variant.attestation.json" },
+    { "path": "build-09/protected-region.bin", "attestation": "build-09/variant.attestation.json" },
+    { "path": "build-10/protected-region.bin", "attestation": "build-10/variant.attestation.json" },
+    { "path": "build-11/protected-region.bin", "attestation": "build-11/variant.attestation.json" },
+    { "path": "build-12/protected-region.bin", "attestation": "build-12/variant.attestation.json" },
+    { "path": "build-13/protected-region.bin", "attestation": "build-13/variant.attestation.json" },
+    { "path": "build-14/protected-region.bin", "attestation": "build-14/variant.attestation.json" },
+    { "path": "build-15/protected-region.bin", "attestation": "build-15/variant.attestation.json" },
+    { "path": "build-16/protected-region.bin", "attestation": "build-16/variant.attestation.json" },
+    { "path": "build-17/protected-region.bin", "attestation": "build-17/variant.attestation.json" },
+    { "path": "build-18/protected-region.bin", "attestation": "build-18/variant.attestation.json" },
+    { "path": "build-19/protected-region.bin", "attestation": "build-19/variant.attestation.json" },
+    { "path": "build-20/protected-region.bin", "attestation": "build-20/variant.attestation.json" }
+  ]
+}

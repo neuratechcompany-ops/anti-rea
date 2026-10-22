@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "denySourceMaps": true,
+  "denySourceFiles": true,
+  "allowedHosts": [],
+  "requiredHosts": [],
+  "forbiddenSubstrings": [],
+  "maxFiles": 10000,
+  "maxFileBytes": 20971520
+}

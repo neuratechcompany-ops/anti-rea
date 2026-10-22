@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "id": "native-cfg-export",
+  "family": "native-cfg",
+  "type": "probe",
+  "surfaces": ["native", "dotnet-nativeaot", "android-jni"],
+  "executableEnv": "ANTI_REA_NATIVE_CFG_EXPORTER",
+  "args": ["{artifact}"],
+  "timeoutMs": 600000,
+  "maxOutputBytes": 134217728,
+  "outputFormat": "json",
+  "requireNonEmpty": true
+}

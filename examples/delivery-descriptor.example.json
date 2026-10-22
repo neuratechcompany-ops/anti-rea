@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "surfaces": [
+    { "id": "release-primary", "kind": "release", "audience": "customer", "path": "/absolute/path/to/unpacked-release" },
+    { "id": "update-stable", "kind": "update", "audience": "customer", "path": "/absolute/path/to/unpacked-update" },
+    { "id": "crash-ingest", "kind": "crash", "audience": "internal", "path": "/absolute/path/to/crash-upload-staging" },
+    { "id": "support-export", "kind": "support", "audience": "internal", "path": "/absolute/path/to/support-export-staging" },
+    { "id": "symbols-private", "kind": "symbols", "audience": "internal", "path": "/absolute/path/to/private-symbol-staging" }
+  ]
+}

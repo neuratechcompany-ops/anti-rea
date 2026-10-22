@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 2,
+  "facts": [
+    {
+      "id": "AUTH-01",
+      "description": "Final entitlement decision",
+      "classification": "SERVER_REQUIRED",
+      "impact": "authorization",
+      "tiers": ["T0", "T1", "T2", "T3"],
+      "authoritativeLocation": "server",
+      "clientImplementation": false,
+      "serverAuthoritative": true,
+      "canaries": ["anti-rea-test-entitlement-authority"],
+      "recoverySignals": []
+    },
+    {
+      "id": "UI-01",
+      "description": "Non-authoritative display formatting",
+      "classification": "COST_ONLY",
+      "impact": "none",
+      "tiers": ["T0", "T1"],
+      "authoritativeLocation": "client",
+      "clientImplementation": true,
+      "serverAuthoritative": false,
+      "canaries": ["anti-rea-test-display-format"],
+      "recoverySignals": [
+        {
+          "id": "display-format-identifier",
+          "kind": "identifier",
+          "normalizedSha256": "df4b9061c31211fa91cc339d055c04105d315ecb5b6bd078ef91d57db697ee1a"
+        },
+        {
+          "id": "display-format-structure",
+          "kind": "js-structure",
+          "normalizedSha256": "REPLACE_WITH_SEMANTIC_FINGERPRINT"
+        },
+        {
+          "id": "display-format-holdout",
+          "kind": "behavior-vector",
+          "normalizedSha256": "REPLACE_WITH_SEMANTIC_FINGERPRINT"
+        }
+      ]
+    }
+  ]
+}

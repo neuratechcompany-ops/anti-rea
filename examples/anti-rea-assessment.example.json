@@ -1,0 +1,186 @@
+{
+  "schemaVersion": 6,
+  "evaluationId": "REPLACE_WITH_UNIQUE_EVALUATION_ID",
+  "protectionPolicy": {
+    "path": "protection-policy.signed.json",
+    "sha256": "REPLACE_WITH_SHA256"
+  },
+  "protectionReceipts": {
+    "virtualization": {
+      "path": "virtualization.json",
+      "sha256": "REPLACE_WITH_SHA256"
+    },
+    "transform": {
+      "path": "transform.json",
+      "sha256": "REPLACE_WITH_SHA256"
+    }
+  },
+  "exposurePolicy": {
+    "path": "exposure-policy.json",
+    "sha256": "REPLACE_WITH_SHA256"
+  },
+  "artifactVerification": {
+    "path": "artifact-verification.json",
+    "sha256": "REPLACE_WITH_SHA256"
+  },
+  "deliveryGraph": {
+    "path": "delivery-graph.json",
+    "sha256": "REPLACE_WITH_SHA256"
+  },
+  "probes": [
+    {
+      "id": "rea-before",
+      "family": "rea",
+      "phase": "before",
+      "evidence": "rea-before",
+      "reportSha256": "REPLACE_WITH_SHA256",
+      "challenge": "rea-before.challenge.json",
+      "challengeSha256": "REPLACE_WITH_SHA256",
+      "attestation": "rea-before.attestation.json",
+      "attestationSha256": "REPLACE_WITH_SHA256"
+    },
+    {
+      "id": "strings-before",
+      "family": "binary-strings",
+      "phase": "before",
+      "evidence": "strings-before",
+      "reportSha256": "REPLACE_WITH_SHA256",
+      "challenge": "strings-before.challenge.json",
+      "challengeSha256": "REPLACE_WITH_SHA256",
+      "attestation": "strings-before.attestation.json",
+      "attestationSha256": "REPLACE_WITH_SHA256"
+    },
+    {
+      "id": "rea-after",
+      "family": "rea",
+      "phase": "after",
+      "evidence": "rea-after",
+      "reportSha256": "REPLACE_WITH_SHA256",
+      "challenge": "rea-after.challenge.json",
+      "challengeSha256": "REPLACE_WITH_SHA256",
+      "attestation": "rea-after.attestation.json",
+      "attestationSha256": "REPLACE_WITH_SHA256"
+    },
+    {
+      "id": "strings-after",
+      "family": "binary-strings",
+      "phase": "after",
+      "evidence": "strings-after",
+      "reportSha256": "REPLACE_WITH_SHA256",
+      "challenge": "strings-after.challenge.json",
+      "challengeSha256": "REPLACE_WITH_SHA256",
+      "attestation": "strings-after.attestation.json",
+      "attestationSha256": "REPLACE_WITH_SHA256"
+    }
+  ],
+  "comparisons": [
+    {
+      "id": "L-01",
+      "tier": "T1",
+      "targetMax": 1,
+      "before": {
+        "score": 4,
+        "probeIds": ["rea-before", "strings-before"]
+      },
+      "after": {
+        "score": 1,
+        "probeIds": ["rea-after", "strings-after"]
+      }
+    }
+  ],
+  "adversarialProbes": [
+    {
+      "id": "vm-runtime-hook",
+      "tier": "T2",
+      "comparisonIds": ["L-01"],
+      "evidence": "vm-runtime.json",
+      "reportSha256": "REPLACE_WITH_SHA256",
+      "challenge": "vm-runtime.challenge.json",
+      "challengeSha256": "REPLACE_WITH_SHA256",
+      "attestation": "vm-runtime.attestation.json",
+      "attestationSha256": "REPLACE_WITH_SHA256"
+    },
+    {
+      "id": "vm-public-deobfuscator",
+      "tier": "T1",
+      "comparisonIds": ["L-01"],
+      "evidence": "vm-public-deobfuscator.json",
+      "reportSha256": "REPLACE_WITH_SHA256",
+      "challenge": "vm-public-deobfuscator.challenge.json",
+      "challengeSha256": "REPLACE_WITH_SHA256",
+      "attestation": "vm-public-deobfuscator.attestation.json",
+      "attestationSha256": "REPLACE_WITH_SHA256"
+    },
+    {
+      "id": "behavior-holdout",
+      "tier": "T1",
+      "comparisonIds": ["L-01"],
+      "evidence": "behavior-holdout.json",
+      "reportSha256": "REPLACE_WITH_SHA256",
+      "challenge": "behavior-holdout.challenge.json",
+      "challengeSha256": "REPLACE_WITH_SHA256",
+      "attestation": "behavior-holdout.attestation.json",
+      "attestationSha256": "REPLACE_WITH_SHA256"
+    },
+    {
+      "id": "cross-build-alignment",
+      "tier": "T1",
+      "comparisonIds": ["L-01"],
+      "evidence": "cross-build-alignment.json",
+      "reportSha256": "REPLACE_WITH_SHA256",
+      "challenge": "cross-build-alignment.challenge.json",
+      "challengeSha256": "REPLACE_WITH_SHA256",
+      "attestation": "cross-build-alignment.attestation.json",
+      "attestationSha256": "REPLACE_WITH_SHA256"
+    },
+    {
+      "id": "cross-build-semantic",
+      "tier": "T1",
+      "comparisonIds": ["L-01"],
+      "evidence": "cross-build-semantic.json",
+      "reportSha256": "REPLACE_WITH_SHA256",
+      "challenge": "cross-build-semantic.challenge.json",
+      "challengeSha256": "REPLACE_WITH_SHA256",
+      "attestation": "cross-build-semantic.attestation.json",
+      "attestationSha256": "REPLACE_WITH_SHA256"
+    }
+  ],
+  "regressions": {
+    "functional": {
+      "report": "functional.regression.json",
+      "reportSha256": "REPLACE_WITH_SHA256",
+      "attestation": "functional.regression.attestation.json",
+      "attestationSha256": "REPLACE_WITH_SHA256"
+    },
+    "platformSecurity": {
+      "report": "platform-security.regression.json",
+      "reportSha256": "REPLACE_WITH_SHA256",
+      "attestation": "platform-security.regression.attestation.json",
+      "attestationSha256": "REPLACE_WITH_SHA256"
+    },
+    "serverAuthorization": {
+      "status": "passed",
+      "evidence": "patched-client-server-authorization.signed.json",
+      "sha256": "REPLACE_WITH_SHA256",
+      "transcript": "patched-client-server-authorization.transcript.json",
+      "transcriptSha256": "REPLACE_WITH_SHA256",
+      "transcriptSchema": "server-authorization-transcript.schema.json",
+      "transcriptSchemaSha256": "REPLACE_WITH_SHA256",
+      "challenge": "server-authorization.challenge.json",
+      "challengeSha256": "REPLACE_WITH_SHA256"
+    },
+    "performance": {
+      "report": "performance.regression.json",
+      "reportSha256": "REPLACE_WITH_SHA256",
+      "attestation": "performance.regression.attestation.json",
+      "attestationSha256": "REPLACE_WITH_SHA256"
+    }
+  },
+  "negativeControl": {
+    "path": "negative-control.json",
+    "sha256": "REPLACE_WITH_SHA256"
+  },
+  "residualRisks": [
+    "Runtime plaintext remains observable to T2/T3 attackers."
+  ]
+}

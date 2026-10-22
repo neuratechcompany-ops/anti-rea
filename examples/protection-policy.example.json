@@ -1,0 +1,110 @@
+{
+  "schemaVersion": 6,
+  "policyId": "example-product-2026-10-22",
+  "product": "ExampleProduct",
+  "issuedAt": "2026-10-22T00:00:00.000Z",
+  "expiresAt": "2026-11-21T00:00:00.000Z",
+  "exposurePolicySha256": "REPLACE_WITH_SHA256",
+  "productSource": {
+    "repositoryUri": "https://example.invalid/owned-product.git",
+    "commit": "REPLACE_WITH_GIT_COMMIT",
+    "tree": "REPLACE_WITH_GIT_TREE",
+    "buildDefinitionSha256": "REPLACE_WITH_SHA256",
+    "builderId": "isolated-product-builder",
+    "builderKeyId": "REPLACE_WITH_SHA256",
+    "builderEnvironmentSha256": "REPLACE_WITH_SHA256"
+  },
+  "protectorDependencies": {
+    "packageLockSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "closureSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+  },
+  "protectionTransform": {
+    "surface": "javascript",
+    "backend": "selective-vm+javascript-obfuscator",
+    "virtualizerName": "anti-rea-selective-vm",
+    "virtualizerVersion": "1.2.0",
+    "keyMode": "external",
+    "encryption": "chacha20-poly1305",
+    "transformerName": "javascript-obfuscator",
+    "transformerVersion": "5.9.0",
+    "profileId": "javascript-vm-balanced",
+    "profileSha256": "REPLACE_WITH_SHA256",
+    "claimTier": "T1"
+  },
+  "serverAuthorization": {
+    "environment": "production-like",
+    "channel": "stable",
+    "action": "license.activate",
+    "deploymentSha256": "REPLACE_WITH_SHA256",
+    "configSha256": "REPLACE_WITH_SHA256",
+    "transcriptSchemaSha256": "REPLACE_WITH_SHA256"
+  },
+  "deliverySurfaces": [
+    { "id": "release-primary", "kind": "release", "audience": "customer", "disposition": "present", "rationale": "primary customer installation tree" },
+    { "id": "update-stable", "kind": "update", "audience": "customer", "disposition": "present", "rationale": "stable-channel update staging tree" },
+    { "id": "crash-ingest", "kind": "crash", "audience": "internal", "disposition": "present", "rationale": "crash upload staging tree before transfer" },
+    { "id": "support-export", "kind": "support", "audience": "internal", "disposition": "present", "rationale": "support bundle staging tree" },
+    { "id": "symbols-private", "kind": "symbols", "audience": "internal", "disposition": "present", "rationale": "private symbol publication tree" }
+  ],
+  "evidenceWorkerKeyIds": ["REPLACE_WITH_SHA256"],
+  "regressionTests": [
+    {
+      "kind": "functional",
+      "suiteId": "product-functional-suite",
+      "suiteSha256": "REPLACE_WITH_SHA256",
+      "runnerId": "isolated-regression-runner",
+      "runnerExecutableSha256": "REPLACE_WITH_SHA256",
+      "environmentSha256": "REPLACE_WITH_SHA256"
+    },
+    {
+      "kind": "performance",
+      "suiteId": "product-performance-suite",
+      "suiteSha256": "REPLACE_WITH_SHA256",
+      "runnerId": "isolated-regression-runner",
+      "runnerExecutableSha256": "REPLACE_WITH_SHA256",
+      "environmentSha256": "REPLACE_WITH_SHA256"
+    },
+    {
+      "kind": "platform-security",
+      "suiteId": "product-platform-security-suite",
+      "suiteSha256": "REPLACE_WITH_SHA256",
+      "runnerId": "isolated-regression-runner",
+      "runnerExecutableSha256": "REPLACE_WITH_SHA256",
+      "environmentSha256": "REPLACE_WITH_SHA256"
+    }
+  ],
+  "analyzers": [
+    {
+      "family": "rea",
+      "adapterSha256": "REPLACE_WITH_SHA256",
+      "executableSha256": "REPLACE_WITH_SHA256"
+    },
+    {
+      "family": "binary-strings",
+      "adapterSha256": "REPLACE_WITH_SHA256",
+      "executableSha256": "REPLACE_WITH_SHA256"
+    },
+    {
+      "family": "semantic-ir",
+      "adapterSha256": "REPLACE_WITH_SHA256",
+      "executableSha256": "REPLACE_WITH_SHA256"
+    }
+  ],
+  "comparisons": [
+    {
+      "id": "L-01",
+      "factIds": ["UI-01"],
+      "tier": "T1",
+      "targetMax": 1,
+      "minimumImprovement": 1,
+      "requiredAnalyzerFamilies": ["rea", "binary-strings"],
+      "requiredProbes": [
+        "anti-rea-behavior-holdout",
+        "anti-rea-cross-build-alignment",
+        "anti-rea-cross-build-semantic",
+        "anti-rea-vm-public-deobfuscator",
+        "anti-rea-vm-runtime-hook"
+      ]
+    }
+  ]
+}

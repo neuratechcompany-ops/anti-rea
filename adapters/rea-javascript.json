@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "id": "rea-javascript",
+  "family": "rea",
+  "type": "probe",
+  "surfaces": ["javascript", "electron", "web"],
+  "executableEnv": "REA_CLI",
+  "args": ["analyze-javascript-application", "{artifact}", "--artifact-format", "directory", "--format", "json", "--full-output"],
+  "timeoutMs": 300000,
+  "maxOutputBytes": 67108864,
+  "outputFormat": "json",
+  "requireNonEmpty": true
+}

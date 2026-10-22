@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "architecture": "x86-64",
+  "entry": "0x1000",
+  "blocks": [
+    {
+      "id": "0x1000",
+      "instructions": [
+        { "mnemonic": "cmp", "operandClasses": ["register", "immediate"] },
+        { "mnemonic": "jle", "operandClasses": ["relative"] }
+      ],
+      "successors": ["0x1010", "0x1020"]
+    },
+    {
+      "id": "0x1010",
+      "instructions": [
+        { "mnemonic": "imul", "operandClasses": ["register", "immediate"] },
+        { "mnemonic": "ret", "operandClasses": [] }
+      ],
+      "successors": []
+    },
+    {
+      "id": "0x1020",
+      "instructions": [
+        { "mnemonic": "mov", "operandClasses": ["register", "register"] },
+        { "mnemonic": "ret", "operandClasses": [] }
+      ],
+      "successors": []
+    }
+  ]
+}

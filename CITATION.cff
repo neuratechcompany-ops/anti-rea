@@ -1,0 +1,11 @@
+cff-version: 1.2.0
+message: "If you use Anti-REA in research, please cite this repository."
+title: "Anti-REA"
+type: software
+authors:
+  - family-names: "Kettunen"
+    given-names: "Aurum Veikko"
+version: 0.34.0
+date-released: 2026-10-23
+url: "https://github.com/neuratechcompany-ops/anti-rea"
+license: AGPL-3.0-only

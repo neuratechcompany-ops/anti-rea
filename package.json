@@ -1,0 +1,63 @@
+{
+  "name": "anti-rea",
+  "version": "0.34.0",
+  "private": true,
+  "description": "Evidence-driven framework for hardening software against AI-assisted reverse engineering.",
+  "author": "Aurum Veikko Kettunen",
+  "license": "AGPL-3.0-only",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/neuratechcompany-ops/anti-rea.git"
+  },
+  "bugs": {
+    "url": "https://github.com/neuratechcompany-ops/anti-rea/issues"
+  },
+  "homepage": "https://github.com/neuratechcompany-ops/anti-rea#readme",
+  "keywords": [
+    "anti-reverse-engineering",
+    "software-protection",
+    "ai-security",
+    "release-gate",
+    "supply-chain-security",
+    "evidence-driven-security"
+  ],
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/*.test.mjs",
+    "validate-assessment": "node scripts/validate-assessment.mjs",
+    "protection-policy": "node scripts/protection-policy.mjs",
+    "evidence-attestation": "node scripts/evidence-attestation.mjs",
+    "evidence-challenge": "node scripts/evidence-challenge.mjs",
+    "server-authorization": "node scripts/server-authorization.mjs",
+    "regression-attestation": "node scripts/regression-attestation.mjs",
+    "product-build-attestation": "node scripts/product-build-attestation.mjs",
+    "cross-build-variant-attestation": "node scripts/cross-build-variant-attestation.mjs",
+    "trust-bundle": "node scripts/trust-bundle.mjs",
+    "time-attestation": "node scripts/time-attestation.mjs",
+    "dependency-closure": "node scripts/dependency-closure.mjs",
+    "cas-publish": "node scripts/cas-publish.mjs",
+    "llm-tripwire": "node scripts/llm-tripwire.mjs",
+    "semantic-recovery": "node scripts/semantic-recovery.mjs",
+    "validate-exposure": "node scripts/validate-exposure-policy.mjs",
+    "run-probe": "node scripts/run-probe.mjs",
+    "probe:vm-runtime": "node scripts/probe-vm-runtime.mjs",
+    "probe:behavior-holdout": "node scripts/probe-behavior-holdout.mjs",
+    "probe:cross-build": "node scripts/probe-cross-build-alignment.mjs",
+    "probe:cross-build-semantic": "node scripts/probe-cross-build-semantic.mjs",
+    "verify:delivery-graph": "node scripts/delivery-graph.mjs",
+    "release-manifest": "node scripts/release-manifest.mjs",
+    "virtualize:javascript": "node scripts/virtualize-javascript.mjs",
+    "transform:javascript": "node scripts/transform-javascript.mjs",
+    "compile:node-bytecode": "node scripts/compile-node-bytecode.mjs",
+    "create:provenance": "node scripts/create-provenance.mjs",
+    "release:attestation": "node scripts/release-attestation.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "acorn": "8.15.0",
+    "bytenode": "1.7.0",
+    "javascript-obfuscator": "5.9.0"
+  }
+}

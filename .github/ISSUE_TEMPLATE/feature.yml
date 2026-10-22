@@ -1,0 +1,26 @@
+name: Defensive capability
+description: Propose a new protection, probe or platform adapter
+title: "[Proposal]: "
+labels: [enhancement]
+body:
+  - type: textarea
+    id: threat
+    attributes:
+      label: Threat and attacker tier
+      description: Describe the attacker win condition and prerequisites.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Required evidence
+      description: How can the framework prove the mitigation works and detect regressions?
+    validations:
+      required: true
+  - type: textarea
+    id: residual
+    attributes:
+      label: Residual bypasses
+      description: What remains observable or externally trusted?
+    validations:
+      required: true

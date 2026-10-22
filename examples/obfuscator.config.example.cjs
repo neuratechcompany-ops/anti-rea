@@ -1,0 +1,20 @@
+module.exports = {
+  compact: true,
+  controlFlowFlattening: true,
+  controlFlowFlatteningThreshold: 0.75,
+  deadCodeInjection: true,
+  deadCodeInjectionThreshold: 0.4,
+  stringArray: true,
+  stringArrayThreshold: 1,
+  stringArrayEncoding: ["rc4"],
+  stringArrayWrappersCount: 2,
+  stringArrayWrappersChainedCalls: true,
+  splitStrings: true,
+  splitStringsChunkLength: 10,
+  renameGlobals: true,
+  selfDefending: true,
+  transformObjectKeys: true,
+  numbersToExpressions: true,
+  debugProtection: true,
+  disableConsoleOutput: true
+};

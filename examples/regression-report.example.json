@@ -1,0 +1,31 @@
+{
+  "format": "rea-hardening-regression-report/v1",
+  "schemaVersion": 1,
+  "kind": "functional",
+  "artifactSha256": "REPLACE_WITH_RELEASE_ARTIFACT_SHA256",
+  "suite": {
+    "id": "product-functional-suite",
+    "path": "/absolute/path/to/functional-suite.mjs",
+    "sha256": "REPLACE_WITH_SHA256"
+  },
+  "runner": {
+    "id": "isolated-regression-runner",
+    "executablePath": "/absolute/path/to/pinned/runner",
+    "executableSha256": "REPLACE_WITH_SHA256",
+    "environmentSha256": "REPLACE_WITH_CONTAINER_OR_ENVIRONMENT_SHA256"
+  },
+  "startedAt": "2026-10-22T12:00:00.000Z",
+  "completedAt": "2026-10-22T12:01:00.000Z",
+  "status": "passed",
+  "result": {
+    "path": "/absolute/path/to/raw-functional-result.json",
+    "bytes": 1234,
+    "sha256": "REPLACE_WITH_SHA256"
+  },
+  "summary": {
+    "total": 100,
+    "passed": 100,
+    "failed": 0,
+    "skipped": 0
+  }
+}

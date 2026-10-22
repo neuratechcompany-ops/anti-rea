@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "id": "strings",
+  "family": "binary-strings",
+  "type": "probe",
+  "surfaces": ["android", "dotnet", "electron", "native", "wasm", "web"],
+  "command": "strings",
+  "args": ["{artifact}"],
+  "timeoutMs": 60000,
+  "maxOutputBytes": 67108864,
+  "outputFormat": "text",
+  "requireNonEmpty": true
+}
