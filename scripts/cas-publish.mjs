@@ -64,15 +64,29 @@ function signReceipt(payload, privateKey) {
   const payloadBytes = canonical(payload);
   return { format: CAS_RECEIPT_FORMAT, keyId: publicKeyId(privateKey), payload: payloadBytes.toString("base64"), signature: sign(null, Buffer.concat([Buffer.from(`${CAS_RECEIPT_FORMAT}\0`), payloadBytes]), privateKey).toString("base64") };
 }
-function verifyReceipt(bytes, trustBundle) {
+function verifyReceipt(bytes, trustBundle, { product, channel, clock }) {
   const envelope = JSON.parse(Buffer.from(bytes).toString("utf8")); exactKeys(envelope, ["format", "keyId", "payload", "signature"], "CAS receipt envelope");
   if (envelope.format !== CAS_RECEIPT_FORMAT || !/^[a-f0-9]{64}$/.test(envelope.keyId ?? "")) throw new Error("CAS receipt envelope is invalid");
+  if (typeof envelope.payload !== "string" || typeof envelope.signature !== "string") throw new Error("CAS receipt envelope is invalid");
   const key = createPublicKey(trustedRoleKey(trustBundle, "artifact-publisher", envelope.keyId).bytes); const payloadBytes = Buffer.from(envelope.payload, "base64");
   if (!verify(null, Buffer.concat([Buffer.from(`${CAS_RECEIPT_FORMAT}\0`), payloadBytes]), key, Buffer.from(envelope.signature, "base64"))) throw new Error("CAS receipt signature is invalid");
   const payload = JSON.parse(payloadBytes.toString("utf8"));
+  if (!canonical(payload).equals(payloadBytes)) throw new Error("CAS receipt payload is not canonical");
   exactKeys(payload, ["artifactSha256", "channel", "clock", "object", "previous", "product", "publishedAt", "release", "releaseAttestationSha256", "releaseManifestSha256", "schemaVersion", "sequence", "trustBundleSha256"], "CAS receipt payload");
   exactKeys(payload.clock, ["attestationSha256", "consumptionSha256", "keyId", "nonce", "requestSha256", "source", "verifierRunId"], "CAS receipt clock");
-  if (payload.schemaVersion !== 2 || payload.clock.source !== "signed-live" || Object.values(payload.clock).some((value) => value !== "signed-live" && !/^[a-f0-9]{64}$/.test(value)) || !Number.isSafeInteger(payload.sequence) || payload.sequence < 1) throw new Error("CAS receipt payload is invalid");
+  const hashes = [payload.artifactSha256, payload.releaseAttestationSha256, payload.releaseManifestSha256, payload.trustBundleSha256, ...Object.entries(payload.clock).filter(([name]) => name !== "source").map(([, value]) => value)];
+  if (payload.schemaVersion !== 2 || payload.clock.source !== "signed-live" || hashes.some((value) => typeof value !== "string" || !/^[a-f0-9]{64}$/.test(value)) || !Number.isSafeInteger(payload.sequence) || payload.sequence < 1) throw new Error("CAS receipt payload is invalid");
+  bounded(payload.product, "CAS receipt product"); bounded(payload.channel, "CAS receipt channel"); bounded(payload.release, "CAS receipt release");
+  if (payload.product !== product || payload.channel !== channel) throw new Error("CAS receipt product/channel mismatch");
+  if (payload.object !== `objects/sha256/${payload.artifactSha256}`) throw new Error("CAS receipt object path is invalid");
+  const publishedAt = Date.parse(payload.publishedAt);
+  if (!Number.isFinite(publishedAt) || new Date(publishedAt).toISOString() !== payload.publishedAt || publishedAt > clock.milliseconds + 5 * 60 * 1000) throw new Error("CAS receipt publication time is invalid");
+  if (payload.previous === null) {
+    if (payload.sequence !== 1) throw new Error("CAS receipt predecessor is invalid");
+  } else {
+    exactKeys(payload.previous, ["sequence", "receiptSha256", "releaseAttestationSha256"], "CAS receipt predecessor");
+    if (payload.sequence <= 1 || payload.previous.sequence !== payload.sequence - 1 || [payload.previous.receiptSha256, payload.previous.releaseAttestationSha256].some((value) => typeof value !== "string" || !/^[a-f0-9]{64}$/.test(value))) throw new Error("CAS receipt predecessor is invalid");
+  }
   return { envelope, payload, sha256: sha256(Buffer.from(bytes)) };
 }
 async function copyObject(sourceInventory, stagingRoot) {
@@ -81,9 +95,17 @@ async function copyObject(sourceInventory, stagingRoot) {
   for (const file of sourceInventory.files) {
     const destination = path.join(payloadRoot, ...file.path.split("/")); const directory = path.dirname(destination); await mkdir(directory, { recursive: true, mode: 0o755 }); directories.add(directory);
     await copyFile(file.source, destination); await chmod(destination, file.executable ? 0o555 : 0o444);
+    for (let ancestor = path.dirname(directory); ancestor.startsWith(`${payloadRoot}${path.sep}`); ancestor = path.dirname(ancestor)) directories.add(ancestor);
   }
+  const copied = await inventory(payloadRoot);
+  if (copied.artifactSha256 !== sourceInventory.artifactSha256) throw new Error("copied CAS object does not match the attested release inventory");
   for (const directory of [...directories].sort((a, b) => b.length - a.length)) await chmod(directory, 0o555);
   await chmod(stagingRoot, 0o555);
+}
+async function verifyObject(objectPath, artifactSha256) {
+  if (!(await lstat(objectPath)).isDirectory() || !(await lstat(path.join(objectPath, "payload"))).isDirectory()) throw new Error("CAS object and payload must be real directories");
+  const current = await inventory(path.join(objectPath, "payload"));
+  if (current.artifactSha256 !== artifactSha256) throw new Error("existing CAS object digest mismatch");
 }
 async function writeExclusive(file, bytes) { const handle = await open(file, "wx", 0o444); try { await handle.writeFile(bytes); } finally { await handle.close(); } }
 
@@ -117,18 +139,22 @@ async function publish(options) {
   let staging = null;
   try {
     const headPath = path.join(channelsRoot, "head.json"); let head = null;
-    try { head = verifyReceipt(await readFile(headPath), trustBundle); } catch (error) { if (error?.code !== "ENOENT") throw error; }
-    if (head && head.payload.sequence === attestation.payload.sequence && head.payload.releaseAttestationSha256 === attestation.sha256) return { status: "already-published", artifactSha256: artifact.artifactSha256, sequence: head.payload.sequence, object: head.payload.object, receipt: headPath };
+    try { head = verifyReceipt(await readFile(headPath), trustBundle, { product: options.product, channel: options.channel, clock }); } catch (error) { if (error?.code !== "ENOENT") throw error; }
+    const objectRelative = `objects/sha256/${artifact.artifactSha256}`; const objectPath = path.join(casRoot, objectRelative);
+    if (head && head.payload.sequence === attestation.payload.sequence && head.payload.releaseAttestationSha256 === attestation.sha256) {
+      if (head.payload.artifactSha256 !== artifact.artifactSha256 || head.payload.release !== options.release || head.payload.releaseManifestSha256 !== sha256(manifestBytes) || head.payload.trustBundleSha256 !== sha256(trustBundleBytes)) throw new Error("CAS receipt does not match the attested release");
+      await verifyObject(objectPath, artifact.artifactSha256);
+      return { status: "already-published", artifactSha256: artifact.artifactSha256, sequence: head.payload.sequence, object: head.payload.object, receipt: headPath };
+    }
     if (attestation.payload.sequence === 1) { if (head !== null) throw new Error("channel already has a head; genesis fork rejected"); }
     else {
       if (!head || head.payload.sequence !== attestation.payload.sequence - 1) throw new Error("publisher channel head is not the immediate predecessor");
       if (attestation.payload.previous?.attestationSha256 !== head.payload.releaseAttestationSha256) throw new Error("release predecessor does not match the publisher channel head");
     }
-    const objectRelative = `objects/sha256/${artifact.artifactSha256}`; const objectPath = path.join(casRoot, objectRelative);
-    try {
-      const current = await inventory(path.join(objectPath, "payload")); if (current.artifactSha256 !== artifact.artifactSha256) throw new Error("existing CAS object digest mismatch");
-    } catch (error) {
-      if (error?.code !== "ENOENT") throw error;
+    let objectExists = true;
+    try { await lstat(objectPath); } catch (error) { if (error?.code !== "ENOENT") throw error; objectExists = false; }
+    if (objectExists) await verifyObject(objectPath, artifact.artifactSha256);
+    else {
       staging = await mkdtemp(path.join(objectsRoot, ".stage-")); await copyObject(artifact, staging); await rename(staging, objectPath); staging = null;
     }
     const previous = head === null ? null : { sequence: head.payload.sequence, receiptSha256: head.sha256, releaseAttestationSha256: head.payload.releaseAttestationSha256 };

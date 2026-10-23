@@ -515,3 +515,35 @@ trust boundaries.
 This closes the pre-issued-file replay path. A fully hostile host can still
 freeze execution after receiving a valid live response; continuous liveness and
 key non-exportability require a remote signer/KMS or co-signing service.
+
+## 32. Post-review remediation 0.34.1
+
+- A deterministic regression replaces an artifact file after its initial
+  inventory, from inside the time client. Publication now hashes the copied
+  staging payload before promotion and rejects the mismatch. Idempotent retry
+  also verifies the stored object instead of trusting only the channel receipt;
+  missing, corrupted and symlinked payloads are rejected.
+- CAS receipt validation now checks canonical payloads, product/channel,
+  digest-addressed object path, hash types, publication time and the immediate
+  predecessor. Release verification independently enforces immediate-predecessor
+  arithmetic and a positive validity interval of no more than 366 days.
+- The allowlist-only Gitleaks configuration was replacing its default rules.
+  The built-in rules are now explicitly enabled; exceptions require exact
+  synthetic values in named files. Ten executable controls prove seven required
+  detections and three valid exceptions, including test-file coverage and
+  resistance to inline suppression. CI pins actions and the scanner archive,
+  then scans the complete Git history.
+- A time client ignoring SIGTERM could defeat the previous synchronous timeout.
+  The adapter now uses asynchronous execution, a hard deadline, a combined
+  64 KiB stdout/stderr budget, POSIX process-group SIGKILL and explicit pipe
+  closure. Errors do not expose client stderr or malformed JSON response
+  snippets. Separate watchdog tests cover signal resistance, inherited pipes,
+  output overflow and error redaction.
+
+These changes preserve release v13 and CAS receipt v2 formats; they reject
+previously accepted malformed or inconsistent data. Read-only local files are
+not WORM storage, and this client adapter is not a process sandbox: a hostile
+executable can escape a process group or alter its host. Production still needs
+isolated workers, remote signing and protected persistent state. Crash recovery
+between receipt creation and channel-head promotion remains a separate CAS
+availability concern; no transactional recovery guarantee is made here.

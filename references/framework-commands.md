@@ -373,8 +373,9 @@ node scripts/server-authorization.mjs sign \
   --out /evidence/server-authorization.signed.json
 ```
 
-Production validation requires a root-trusted signed remote-time proof and
-atomically consumes its nonce. `--now` is accepted only with
+Production gate signing requires a root-trusted response to a live verifier
+challenge and atomically consumes its nonce. File time proofs are diagnostic
+only and cannot sign a production gate. `--now` is accepted only with
 `REA_TEST_MODE=1`; such a result is labelled `test-override`, cannot be signed
 with `--gate-private-key`, and is rejected by provenance and release even when
 every other signature is valid.
@@ -562,13 +563,24 @@ node scripts/product-build-attestation.mjs sign \
 
 Then bind both the product and protector repositories:
 
-For every production stage, obtain a new 256-bit nonce and a signed time
-attestation from the separately protected `time-authority`. Assessment scope is
+For every production stage, configure `--time-authority-client` as an executable
+that reads one JSON request from stdin and returns one signed time attestation
+on stdout. The verifier generates the fresh 256-bit nonce internally; the client
+must forward that request to the separately protected `time-authority`.
+Assessment scope is
 the comparison `evaluationId`; provenance scope is
 `provenance:<sha256(assessment-result bytes)>`; release scope is
 `release:<sha256(assessment-result bytes)>`; publisher scope is
 `publish:<sha256(release-attestation bytes)>`. Never reuse a nonce. All stages
-must point at the same protected, shared time ledger.
+must point at the same protected, shared time ledger. The default client timeout
+is 10 seconds, and combined stdout/stderr output is limited to 64 KiB. Timeout
+and overflow close the client's pipes and kill its ordinary POSIX process group;
+stderr is not included in errors. This is a bounded protocol adapter, not a
+sandbox for an untrusted executable. Request and consumption
+digests are recorded in downstream attestations. The authority response itself
+signs product, environment, evaluation ID and nonce; `verifierRunId` and the full
+request digest are recorded by the verifier, not independently signed by the
+time authority.
 
 ```bash
 node scripts/create-provenance.mjs \
@@ -662,10 +674,13 @@ node scripts/cas-publish.mjs \
 ```
 
 The command re-verifies the exact artifact, manifest, release attestation,
-trust-bundle binding and publisher role. It stores bytes under their artifact
-digest, removes write bits, signs a per-release receipt and atomically advances
+trust-bundle binding and publisher role. It re-hashes the actual copied staging
+payload before promoting it to its digest-addressed object, removes write bits,
+signs a per-release receipt and atomically advances
 one product/channel head. A second genesis, skipped sequence or mismatched
-predecessor is rejected. On local filesystems this is a verifiable CAS protocol,
+predecessor is rejected. Repeating a publish revalidates the stored payload
+before returning `already-published`; missing/corrupted objects and symlinked
+payload roots are rejected. On local filesystems this is a verifiable CAS protocol,
 not protection from a hostile storage administrator; production must enforce
 append-only/Object Lock and publisher-only ACLs externally.
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { createHash, createPrivateKey, createPublicKey, randomBytes, sign, verify } from "node:crypto";
-import { spawnSync } from "node:child_process";
+import { spawn } from "node:child_process";
 import { lstat, open, readFile, realpath } from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
@@ -61,17 +61,61 @@ export async function authorizeSignedRemoteTime({ trustBundleBytes, trustRootPub
   return { trustBundle, verified, consumption, clock: { ...verified.clock, consumptionSha256: consumption.sha256 } };
 }
 
+function requestAuthorityTime(authorityClient, request, timeoutMs) {
+  return new Promise((resolve, reject) => {
+    const processGroup = process.platform !== "win32";
+    const child = spawn(path.resolve(authorityClient), [], {
+      detached: processGroup,
+      stdio: ["pipe", "pipe", "pipe"],
+      env: { PATH: process.env.PATH ?? "", REA_TIME_REQUEST_FORMAT: TIME_REQUEST_FORMAT },
+    });
+    const chunks = []; let outputBytes = 0; let settled = false;
+    const timer = setTimeout(() => finish(new Error("live time authority client timed out")), timeoutMs);
+    function finish(error) {
+      if (settled) return;
+      settled = true; clearTimeout(timer);
+      // SIGTERM can be ignored. Kill the whole ordinary POSIX process group and
+      // detach our pipes so an escaped descendant cannot delay the verifier.
+      try {
+        if (processGroup && child.pid) process.kill(-child.pid, "SIGKILL");
+        else child.kill("SIGKILL");
+      } catch { /* The client/group may already have exited. */ }
+      child.stdin.destroy(); child.stdout.destroy(); child.stderr.destroy(); child.unref();
+      if (error) reject(error);
+      else resolve(Buffer.concat(chunks));
+    }
+    function receive(chunk, keep) {
+      if (settled) return;
+      outputBytes += chunk.length;
+      if (outputBytes > 64 * 1024) return finish(new Error("live time authority response size is invalid"));
+      if (keep) chunks.push(chunk);
+    }
+    child.stdout.on("data", (chunk) => receive(chunk, true));
+    // Count stderr against the same bound, but never retain or surface its content.
+    child.stderr.on("data", (chunk) => receive(chunk, false));
+    child.once("error", () => finish(new Error("live time authority client failed to start")));
+    child.stdin.on("error", () => finish(new Error("live time authority client input failed")));
+    child.stdout.on("error", () => finish(new Error("live time authority client output failed")));
+    child.stderr.on("error", () => finish(new Error("live time authority client output failed")));
+    child.once("close", (code, signal) => {
+      if (code !== 0 || signal) finish(new Error("live time authority client rejected request"));
+      else finish(null);
+    });
+    child.stdin.end(canonical(request));
+  });
+}
+
 export async function authorizeLiveRemoteTime({ trustBundleBytes, trustRootPublicKeyBytes, product, evaluationId, authorityClient, ledgerRoot, timeoutMs = 10_000 }) {
   bounded(authorityClient, "time authority client", 4096); bounded(evaluationId, "evaluationId");
   if (!Number.isSafeInteger(timeoutMs) || timeoutMs < 100 || timeoutMs > 60_000) throw new Error("time authority timeout is invalid");
   const bootstrap = verifyTrustBundleEnvelopeSignature(trustBundleBytes, trustRootPublicKeyBytes, { product }); const nonce = randomBytes(32).toString("hex"); const verifierRunId = randomBytes(32).toString("hex");
   const request = { format: TIME_REQUEST_FORMAT, schemaVersion: 1, product: bootstrap.payload.product, environment: bootstrap.payload.environment, evaluationId, nonce, verifierRunId };
-  const result = spawnSync(path.resolve(authorityClient), [], { input: canonical(request), encoding: null, timeout: timeoutMs, maxBuffer: 64 * 1024, stdio: ["pipe", "pipe", "pipe"], env: { PATH: process.env.PATH ?? "", REA_TIME_REQUEST_FORMAT: TIME_REQUEST_FORMAT } });
-  if (result.error?.code === "ETIMEDOUT" || result.signal) throw new Error("live time authority client timed out");
-  if (result.error) throw new Error(`live time authority client failed: ${result.error.message}`);
-  if (result.status !== 0) throw new Error(`live time authority client rejected request: ${Buffer.from(result.stderr ?? []).toString("utf8").slice(0, 512)}`);
-  const responseBytes = Buffer.from(result.stdout ?? []); if (responseBytes.length === 0 || responseBytes.length > 64 * 1024) throw new Error("live time authority response size is invalid");
-  const envelope = JSON.parse(responseBytes.toString("utf8")); if (!/^[a-f0-9]{64}$/.test(envelope?.keyId ?? "")) throw new Error("live time authority response lacks a valid keyId");
+  const responseBytes = await requestAuthorityTime(authorityClient, request, timeoutMs);
+  if (responseBytes.length === 0 || responseBytes.length > 64 * 1024) throw new Error("live time authority response size is invalid");
+  let envelope;
+  try { envelope = JSON.parse(responseBytes.toString("utf8")); }
+  catch { throw new Error("live time authority response is not valid JSON"); }
+  if (!/^[a-f0-9]{64}$/.test(envelope?.keyId ?? "")) throw new Error("live time authority response lacks a valid keyId");
   const authority = trustedRoleKey(bootstrap, "time-authority", envelope.keyId); const verified = verifyTimeAttestationEnvelope(responseBytes, authority.bytes, { product: request.product, environment: request.environment, evaluationId, nonce });
   const trustBundle = verifyTrustBundleEnvelope(trustBundleBytes, trustRootPublicKeyBytes, { product, now: verified.payload.observedAt }); const consumption = await consumeTimeAttestation(ledgerRoot, verified, evaluationId);
   return { trustBundle, verified, consumption, request: { ...request, sha256: sha256(canonical(request)) }, clock: { ...verified.clock, source: "signed-live", consumptionSha256: consumption.sha256, verifierRunId, requestSha256: sha256(canonical(request)) } };

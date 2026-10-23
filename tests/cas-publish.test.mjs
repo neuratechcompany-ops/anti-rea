@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { createHash, createPublicKey, generateKeyPairSync, sign } from "node:crypto";
-import { mkdir, mkdtemp, readFile, stat, writeFile } from "node:fs/promises";
+import { chmod, mkdir, mkdtemp, readFile, readdir, rm, stat, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
@@ -25,7 +25,7 @@ async function fixture() {
   const trustPayload = { schemaVersion: 1, bundleId: "cas-fixture-roots", product: "CASProduct", environment: "production", issuedAt, expiresAt, roles: { "artifact-publisher": [trustEntry(publisher.publicKey)], "release-attestation": [trustEntry(releaseSigner.publicKey)], "release-manifest": [trustEntry(manifestSigner.publicKey)], "time-authority": [trustEntry(timeAuthority.publicKey)] } };
   const trustBundle = path.join(directory, "trust-bundle.json"); const trustBundleBytes = Buffer.from(JSON.stringify(createTrustBundleEnvelope(trustPayload, trustRoot.privateKey))); await writeFile(trustBundle, trustBundleBytes);
   const timeLedger = path.join(directory, "time-ledger"); await mkdir(timeLedger); const timeAuthorityClient = await createLiveTimeAuthorityClient(directory, timeAuthority.privateKey);
-  return { directory, artifact, casRoot, appBytes, releaseSigner, manifestSigner, publisherPrivate, trustRootPublic, trustBundle, trustBundleBytes, timeAuthority, timeAuthorityClient, timeLedger, trustEnvironment: trustPayload.environment };
+  return { directory, artifact, casRoot, appBytes, releaseSigner, manifestSigner, publisher, publisherPrivate, trustRootPublic, trustBundle, trustBundleBytes, timeAuthority, timeAuthorityClient, timeLedger, trustEnvironment: trustPayload.environment };
 }
 
 async function releaseFiles(value, release, sequence = 1, previous = null) {
@@ -51,6 +51,64 @@ test("publishes an attested artifact into a read-only content-addressed object a
 test("rejects a mutable artifact changed after release attestation", async () => {
   const value = await fixture(); const releaseValue = await releaseFiles(value, "1.0.0"); await writeFile(path.join(value.artifact, "app.js"), "tampered");
   const result = publish(value, releaseValue); assert.equal(result.status, 1); assert.match(result.stderr, /does not match the attested release inventory/);
+});
+
+test("rejects bytes replaced after inventory but before the CAS copy", async () => {
+  const value = await fixture(); const releaseValue = await releaseFiles(value, "1.0.0");
+  const authoritySource = await readFile(value.timeAuthorityClient, "utf8");
+  await writeFile(value.timeAuthorityClient, `${authoritySource}\nawait (await import("node:fs/promises")).writeFile(${JSON.stringify(path.join(value.artifact, "app.js"))}, "changed-during-live-time-challenge");\n`);
+  const result = publish(value, releaseValue);
+  assert.equal(result.status, 1, result.stdout); assert.match(result.stderr, /copied CAS object does not match/);
+  assert.deepEqual(await readdir(path.join(value.casRoot, "objects", "sha256")), [], "rejected staging must not survive or become a CAS object");
+  const channelId = sha(Buffer.from("CASProduct\0stable"));
+  await assert.rejects(stat(path.join(value.casRoot, "channels", channelId, "head.json")), { code: "ENOENT" });
+});
+
+test("revalidates stored bytes before reporting an idempotent publication", async () => {
+  const value = await fixture(); const releaseValue = await releaseFiles(value, "1.0.0");
+  const first = publish(value, releaseValue); assert.equal(first.status, 0, first.stderr);
+  const stored = path.join(value.casRoot, JSON.parse(first.stdout).object, "payload", "app.js");
+  await chmod(stored, 0o644); await writeFile(stored, "corrupted-after-publication");
+  const result = publish(value, releaseValue);
+  assert.equal(result.status, 1, result.stdout); assert.match(result.stderr, /existing CAS object digest mismatch/);
+});
+
+test("rejects an idempotent publication when its stored payload was removed", async () => {
+  const value = await fixture(); const releaseValue = await releaseFiles(value, "1.0.0");
+  const first = publish(value, releaseValue); assert.equal(first.status, 0, first.stderr);
+  const payload = path.join(value.casRoot, JSON.parse(first.stdout).object, "payload");
+  await chmod(payload, 0o755); await rm(path.join(payload, "app.js"));
+  const result = publish(value, releaseValue);
+  assert.equal(result.status, 1, result.stdout); assert.match(result.stderr, /existing CAS object digest mismatch/);
+});
+
+test("rejects an existing CAS payload redirected through a symlink", async () => {
+  const value = await fixture(); const releaseValue = await releaseFiles(value, "1.0.0");
+  const object = path.join(value.casRoot, "objects", "sha256", releaseValue.artifactSha256);
+  await mkdir(object, { recursive: true }); await symlink(value.artifact, path.join(object, "payload"));
+  const result = publish(value, releaseValue);
+  assert.equal(result.status, 1, result.stdout); assert.match(result.stderr, /must be real directories/);
+});
+
+test("rejects signed receipts with a substituted scope, object path, or invalid provenance", async (t) => {
+  const mutations = [
+    ["another channel", (payload) => { payload.channel = "preview"; }, /product\/channel mismatch/],
+    ["another product", (payload) => { payload.product = "DifferentProduct"; }, /product\/channel mismatch/],
+    ["traversal object", (payload) => { payload.object = "../unverified"; }, /object path is invalid/],
+    ["clock marker as digest", (payload) => { payload.clock.requestSha256 = "signed-live"; }, /payload is invalid/],
+    ["invalid publication date", (payload) => { payload.publishedAt = "yesterday"; }, /publication time is invalid/],
+    ["genesis predecessor", (payload) => { payload.previous = { sequence: 1, receiptSha256: "a".repeat(64), releaseAttestationSha256: "b".repeat(64) }; }, /predecessor is invalid/],
+    ["different manifest", (payload) => { payload.releaseManifestSha256 = "a".repeat(64); }, /does not match the attested release/],
+  ];
+  for (const [name, mutate, expected] of mutations) await t.test(name, async () => {
+    const value = await fixture(); const releaseValue = await releaseFiles(value, "1.0.0");
+    const first = publish(value, releaseValue); assert.equal(first.status, 0, first.stderr);
+    const head = JSON.parse(first.stdout).head; const receipt = JSON.parse(await readFile(head, "utf8"));
+    const payload = JSON.parse(Buffer.from(receipt.payload, "base64").toString("utf8")); mutate(payload);
+    await chmod(head, 0o644); await writeFile(head, JSON.stringify(envelope(receipt.format, payload, value.publisher.privateKey)));
+    const result = publish(value, releaseValue);
+    assert.equal(result.status, 1, result.stdout); assert.match(result.stderr, expected);
+  });
 });
 
 test("rejects a second genesis branch for an existing product channel", async () => {

@@ -7,7 +7,7 @@
 [![CI](https://github.com/neuratechcompany-ops/anti-rea/actions/workflows/ci.yml/badge.svg)](https://github.com/neuratechcompany-ops/anti-rea/actions/workflows/ci.yml)
 [![Node.js 20+](https://img.shields.io/badge/Node.js-20%2B-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
 [![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL--3.0-blue.svg)](LICENSE)
-[![Tests: 189](https://img.shields.io/badge/tests-189%20passing-brightgreen)](#verification)
+[![Tests: 209](https://img.shields.io/badge/tests-209%20passing-brightgreen)](#verification)
 
 **Evidence-driven protection against AI-assisted reverse engineering.**
 
@@ -113,7 +113,7 @@ The complete operational sequence and command examples are documented in
 | `scripts/delivery-graph.mjs` | Complete release/update/crash/support/symbol inventory |
 | `scripts/create-provenance.mjs` | Product source, build, toolchain, and evidence binding |
 | `scripts/release-attestation.mjs` | Signed, expiring, anti-rollback release chain |
-| `scripts/cas-publish.mjs` | Verification and immutable digest-addressed publication |
+| `scripts/cas-publish.mjs` | Verification of copied bytes and read-only digest-addressed publication |
 | `scripts/time-attestation.mjs` | Live external time challenge and one-time ledger |
 | `scripts/dependency-closure.mjs` | Installed protector dependency-tree verification |
 
@@ -144,14 +144,23 @@ outside the repository. See [`SECURITY.md`](SECURITY.md) and the
 npm ci
 npm test
 npm audit --omit=dev
-gitleaks dir . --config .gitleaks.toml
+node scripts/check-secret-scanner.mjs
+gitleaks git . --config .gitleaks.toml --log-opts=--all --redact --ignore-gitleaks-allow
 ```
 
-Current baseline: **189/189 tests passing** on Node.js 20 and 22. CI also runs
+Current baseline: **209/209 tests passing** on Node.js 20 and 22. CI also runs
 npm audit and Gitleaks. A green project CI run confirms framework integrity; it
 does not by itself prove that a particular downstream product is protected.
 Each product claim requires its own signed evidence bundle and declared attacker
-tier.
+tier. The secret scanner is tested against controlled synthetic credentials in
+both application and test paths, so a disabled rule set cannot pass unnoticed.
+Use Gitleaks 8.30.1, the version pinned in CI.
+
+Version 0.34.1 re-hashes the copied CAS payload before publication and checks
+stored bytes even on idempotent retries. It also fixes the previous secret-scan
+configuration, which could return a clean result without loading detection
+rules, and bounds live time clients even when they ignore SIGTERM or leave
+descendant pipes open. See the [security changes](CHANGELOG.md#0341---2026-10-23).
 
 ## Project status and limitations
 

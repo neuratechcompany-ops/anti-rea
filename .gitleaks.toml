@@ -1,11 +1,40 @@
 title = "Anti-REA Gitleaks configuration"
+minVersion = "v8.25.0"
 
-[allowlist]
-description = "Exact synthetic detector fixtures; never production credentials"
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Exact synthetic secret fixtures in their documented example files only"
+targetRules = ["generic-api-key"]
+condition = "AND"
+paths = ['''(^|/)examples/(secret\.before\.js|verification-before-after\.md)$''']
+regexTarget = "secret"
 regexes = [
-  '''sk-live-9f8e7d6c5b4a39281706secret''',
-  '''tok_8f3d2a1b9c7e6secret''',
-  '''Sup3rSecret!Prod#2026''',
-  '''bomless-utf16-secret''',
-  '''chacha20-poly1305'''
+  '''^sk-live-9f8e7d6c5b4a39281706secret$''',
+  '''^Sup3rSecret!Prod#2026$'''
 ]
+
+[[allowlists]]
+description = "Exact synthetic token in its structure example only"
+targetRules = ["generic-api-key"]
+condition = "AND"
+paths = ['''(^|/)examples/(structure\.before\.js|verification-structure\.md)$''']
+regexTarget = "secret"
+regexes = ['''^tok_8f3d2a1b9c7e6secret$''']
+
+[[allowlists]]
+description = "Exact UTF-16 detector fixture in the detector regression test only"
+targetRules = ["generic-api-key"]
+condition = "AND"
+paths = ['''(^|/)tests/red-team-bypass\.test\.mjs$''']
+regexTarget = "secret"
+regexes = ['''^bomless-utf16-secret$''']
+
+[[allowlists]]
+description = "Algorithm name mistaken for a credential in named crypto fixtures"
+targetRules = ["generic-api-key"]
+condition = "AND"
+paths = ['''(^|/)(tests/(protection-transform|harden-js-policy|server-authorization|validate-assessment|create-provenance|protection-policy|release-attestation|virtualize-javascript)\.test\.mjs|scripts/virtualize-javascript\.mjs)$''']
+regexTarget = "secret"
+regexes = ['''^chacha20-poly1305$''']

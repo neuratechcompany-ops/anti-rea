@@ -185,12 +185,15 @@ function validatePayload(payload) {
   const keys = ["artifactSha256", "bindings", "channel", "clock", "expiresAt", "issuedAt", "previous", "product", "release", "schemaVersion", "sequence"];
   if (!payload || typeof payload !== "object" || Array.isArray(payload) || Object.keys(payload).sort().join("|") !== keys.sort().join("|")) throw new Error("attestation payload fields are invalid");
   if (payload.schemaVersion !== 1 || !/^[a-f0-9]{64}$/.test(payload.artifactSha256 ?? "") || !Number.isSafeInteger(payload.sequence) || payload.sequence < 1) throw new Error("attestation payload identity is invalid");
-  bounded(payload.product, "payload product"); bounded(payload.channel, "payload channel"); bounded(payload.release, "payload release"); instant(payload.issuedAt, "payload issuedAt"); instant(payload.expiresAt, "payload expiresAt");
+  bounded(payload.product, "payload product"); bounded(payload.channel, "payload channel"); bounded(payload.release, "payload release");
+  const issuedAt = instant(payload.issuedAt, "payload issuedAt"); const expiresAt = instant(payload.expiresAt, "payload expiresAt");
+  if (expiresAt <= issuedAt || expiresAt > issuedAt + 366 * 24 * 60 * 60 * 1000) throw new Error("attestation validity window is invalid");
   const clockKeys = ["attestationSha256", "consumptionSha256", "keyId", "nonce", "observedAt", "requestSha256", "source", "verifierRunId"];
   if (!payload.clock || Object.keys(payload.clock).sort().join("|") !== clockKeys.sort().join("|") || payload.clock.source !== "signed-live" || payload.clock.observedAt !== payload.issuedAt || [payload.clock.keyId, payload.clock.attestationSha256, payload.clock.consumptionSha256, payload.clock.nonce, payload.clock.requestSha256, payload.clock.verifierRunId].some((value) => !/^[a-f0-9]{64}$/.test(value))) throw new Error("attestation clock binding is invalid");
   const bindingKeys = ["artifactReportSha256", "assessmentResultSha256", "assessmentGateKeyId", "exposureReportSha256", "virtualizationReportSha256", "transformReportSha256", "provenanceSha256", "releaseManifestSha256", "releaseManifestKeyId", "protectionPolicySha256", "productBuildAttestationSha256", "tripwireManifestSha256", "trustBundleSha256"];
   if (!payload.bindings || Object.keys(payload.bindings).sort().join("|") !== bindingKeys.sort().join("|") || Object.values(payload.bindings).some((value) => !/^[a-f0-9]{64}$/.test(value))) throw new Error("attestation bindings are invalid");
-  if (payload.previous !== null && (!payload.previous || !Number.isSafeInteger(payload.previous.sequence) || payload.previous.sequence < 1 || !/^[a-f0-9]{64}$/.test(payload.previous.attestationSha256 ?? ""))) throw new Error("previous attestation binding is invalid");
+  if ((payload.sequence === 1) !== (payload.previous === null)) throw new Error("previous attestation binding is invalid");
+  if (payload.previous !== null && (!payload.previous || Array.isArray(payload.previous) || Object.keys(payload.previous).sort().join("|") !== "attestationSha256|sequence" || !Number.isSafeInteger(payload.previous.sequence) || payload.previous.sequence !== payload.sequence - 1 || !/^[a-f0-9]{64}$/.test(payload.previous.attestationSha256 ?? ""))) throw new Error("previous attestation binding is invalid");
 }
 
 export function verifyReleaseAttestationEnvelope(bytes, trustBundle, { product, channel, release, minimumSequence = 1, clock } = {}) {

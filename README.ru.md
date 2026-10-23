@@ -7,7 +7,7 @@
 [![CI](https://github.com/neuratechcompany-ops/anti-rea/actions/workflows/ci.yml/badge.svg)](https://github.com/neuratechcompany-ops/anti-rea/actions/workflows/ci.yml)
 [![Node.js 20+](https://img.shields.io/badge/Node.js-20%2B-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
 [![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL--3.0-blue.svg)](LICENSE)
-[![Tests: 189](https://img.shields.io/badge/tests-189%20passing-brightgreen)](#проверка-проекта)
+[![Tests: 209](https://img.shields.io/badge/tests-209%20passing-brightgreen)](#проверка-проекта)
 
 **Evidence-driven protection against AI-assisted reverse engineering.**
 
@@ -138,7 +138,9 @@ Production assessment, provenance, release signing/verification и CAS publisher
 клиент возвращает Ed25519-подписанный ответ по stdout, привязанный к product,
 environment, операции, verifier run и nonce. Nonce атомарно расходуется в общем
 защищённом ledger; повтор, подмена authority/scope и откат локальных часов
-отклоняются. `--now` остаётся только тестовым режимом и production gate его не
+отклоняются. Ответ authority подписывает nonce и scope; полный хэш запроса и
+идентификатор verifier run фиксирует сам verifier в следующей подписи.
+`--now` остаётся только тестовым режимом и production gate его не
 подписывает. Release v13 и CAS receipt v2 сохраняют request, response и
 consumption digests внутри собственной подписи. Файловая аттестация оставлена
 только для диагностики и production gate/sign/publish её отклоняют. Authority
@@ -271,13 +273,24 @@ signal, но для channel-attested релиза exact templates, распол�
 npm ci
 npm test
 npm audit --omit=dev
-python3 /path/to/skill-creator/scripts/quick_validate.py .
+node scripts/check-secret-scanner.mjs
+gitleaks git . --config .gitleaks.toml --log-opts=--all --redact --ignore-gitleaks-allow
 ```
 
-Текущий baseline: **189/189 тестов**. CI выполняет тесты на Node.js 20 и 22,
+Текущий baseline: **209/209 тестов**. CI выполняет тесты на Node.js 20 и 22,
 проверяет npm audit и запускает Gitleaks. Защитное утверждение считается
 действительным только для конкретного evidence bundle и указанного attacker
 tier — зелёный CI сам по себе не является доказательством защищённости продукта.
+Для проверки секретов используется Gitleaks 8.30.1, закреплённый в CI.
+Самотест подбрасывает синтетические токены в код приложения и тесты и проверяет,
+что сканер их обнаруживает.
+
+В версии 0.34.1 публикатор пересчитывает хэш фактически скопированного CAS
+payload и проверяет сохранённые байты при повторной публикации. Также исправлена
+предыдущая конфигурация Gitleaks: она могла возвращать успех без загрузки правил
+обнаружения. Клиент времени больше не может задерживать verifier, игнорируя
+SIGTERM или оставляя открытые каналы дочерних процессов. Подробности — в
+[changelog](CHANGELOG.md#0341---2026-10-23).
 
 ## Статус и ограничения
 
