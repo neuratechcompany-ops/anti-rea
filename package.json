@@ -62,7 +62,7 @@
   },
   "dependencies": {
     "acorn": "8.15.0",
-    "bytenode": "1.7.0",
+    "bytenode": "2.1.0",
     "javascript-obfuscator": "5.9.0"
   }
 }
